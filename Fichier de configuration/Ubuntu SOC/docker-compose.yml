@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # --- PARTIE METRIQUES (PROMETHEUS & GRAFANA) ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: renderer
+    ports:
+      - 8081
+    environment:
+      AUTH_TOKEN: 'SuperSecretSocToken2026'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: 'SuperSecretSocToken2026'
+    restart: unless-stopped
+
+  # --- PARTIE LOGS / SIEM (SUITE ELK) ---
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g" # Limite Elasticsearch à 2 Go de RAM
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.18
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped

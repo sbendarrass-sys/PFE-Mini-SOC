@@ -1,0 +1,14 @@
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Prometheus se surveille lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # La cible Windows que nous configurerons juste après
+  - job_name: 'windows_exporter'
+    static_configs:
+      - targets: ['192.168.50.10:9182']
